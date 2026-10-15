@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🎰 Колесо Фортуны | BIG | PAY</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body {
+            background: linear-gradient(135deg, #0b1021 0%, #172a45 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 15px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .header h1 {
+            font-size: 20px;
+            color: #ffd700;
+            margin-bottom: 2px;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+        }
+        .header p {
+            font-size: 12px;
+            color: #8892b0;
+        }
+        /* Блок бонусов и баланса */
+        .balance-box {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.3);
+            border-radius: 12px;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-around;
+            backdrop-filter: blur(5px);
+        }
+        .balance-item span {
+            display: block;
+            font-size: 14px;
+            color: #8892b0;
+        }
+        .balance-item b {
+            font-size: 18px;
+            color: #ffd700;
+        }
+        /* Колесо */
+        .wheel-container {
+            position: relative;
+            width: 250px;
+            height: 250px;
+            margin: 10px auto;
+        }
+        .pointer {
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-top: 22px solid #ff4757;
+            z-index: 10;
+            filter: drop-shadow(0 2px 2px rgba(0,0,0,0.5));
+        }
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 5px solid #ffd700;
+            position: relative;
+            overflow: hidden;
+            transition: transform 4s cubic-bezier(0.15, 0.75, 0.1, 1);
+            box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
+            background: conic-gradient(
+                #1b4332 0deg 90deg,   
+                #2d6a4f 90deg 180deg,  
+                #52b788 180deg 270deg, 
+                #ffd700 270deg 360deg  
+            );
+        }
+        .sector-text {
+            position: absolute;
+            width: 50%;
+            height: 50%;
+            top: 0;
+            left: 50%;
+            transform-origin: 0% 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 13px;
+            color: #fff;
+            text-shadow: 1px 1px 2px #000;
+        }
+        /* Кнопки */
+        .btn {
+            background: linear-gradient(135deg, #f39c12 0%, #d35400 100%);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 15px;
+            font-weight: bold;
+            border-radius: 10px;
+            cursor: pointer;
+            width: 100%;
+            max-width: 280px;
+            box-shadow: 0 4px 12px rgba(243, 156, 18, 0.4);
+            margin: 6px auto;
+            transition: 0.2s;
+        }
+        .btn:active { transform: scale(0.97); }
+        .btn:disabled { background: #333; color: #666; box-shadow: none; cursor: not-allowed; }
+        
+        .btn-extra {
+            background: linear-gradient(135deg, #27ae60 0%, #2ecc71 100%);
+            box-shadow: 0 4px 12px rgba(46, 204, 113, 0.4);
+        }
+        /* Карточки информации */
+        .info-card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            padding: 10px;
+            margin: 8px 0;
+            font-size: 12px;
+            backdrop-filter: blur(5px);
+        }
+        .info-card span { color: #2ed573; font-weight: bold; }
+        #result {
+            font-size: 14px;
+            font-weight: bold;
+            margin: 5px 0;
+            min-height: 20px;
+            color: #2ed573;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h1>♠️ КОЛЕСО ФОРТУНЫ ♣️</h1>
+        <p>Зарабатывай призы и бонусы для баланса!</p>
+    </div>
+
+    <!-- Блок отображения бонуса и счета -->
+    <div class="balance-box">
+        <div class="balance-item">
+            <span>Ваш Бонус</span>
+            <b id="bonusBalance">0 сом</b>
+        </div>
+        <div class="balance-item">
+            <span>Макс. Приз</span>
+            <b>100 сом</b>
+        </div>
+    </div>
+
+    <div class="wheel-container">
+        <div class="pointer"></div>
+        <div class="wheel" id="wheel">
+            <div class="sector-text" style="transform: rotate(45deg) translate(15px, -35px);">10 сом</div>
+            <div class="sector-text" style="transform: rotate(135deg) translate(15px, -35px);">20 сом</div>
+            <div class="sector-text" style="transform: rotate(225deg) translate(15px, -35px);">50 сом</div>
+            <div class="sector-text" style="transform: rotate(315deg) translate(15px, -35px); color: #000; text-shadow: none;">🔥 100 СОМ</div>
+        </div>
+    </div>
+
+    <div id="result">Крути колесо и забирай приз!</div>
+
+    <div class="footer">
+        <div class="info-card">
+            👥 Друзей приглашено: <span id="friendsCount">0</span> / 10<br>
+            <small style="color: #a0aec0;">Позови 10 друзей = получи 1 доп. попытку!</small>
+        </div>
+
+        <button class="btn" id="spinBtn" onclick="spinWheel()">КРУТИТЬ (РАЗ В 24Ч)</button>
+        <button class="btn btn-extra" id="extraBtn" onclick="useExtraSpin()" style="display:none;">🎁 ИСПОЛЬЗОВАТЬ ДОП. ПОПЫТКУ</button>
+    </div>
+
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+
+        const user = tg.initDataUnsafe?.user;
+        const userId = user ? user.id : 'test_user';
+
+        // Данные из памяти (или синхронизированные с ботом)
+        let lastSpinTime = localStorage.getItem(`last_spin_${userId}`) || 0;
+        let friendsCount = parseInt(localStorage.getItem(`friends_${userId}`) || '0');
+        let extraSpins = parseInt(localStorage.getItem(`extra_spins_${userId}`) || '0');
+        let currentBonus = parseFloat(localStorage.getItem(`bonus_${userId}`) || '0');
+
+        document.getElementById('friendsCount').innerText = friendsCount;
+        document.getElementById('bonusBalance').innerText = currentBonus + ' сом';
+
+        let isSpinning = false;
+
+        function checkTimer() {
+            const now = new Date().getTime();
+            const cooldown = 24 * 60 * 60 * 1000; // 24 часа
+            const elapsed = now - lastSpinTime;
+
+            if (elapsed < cooldown) {
+                const remaining = cooldown - elapsed;
+                const hours = Math.floor(remaining / (1000 * 60 * 60));
+                const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                
+                if (extraSpins > 0) {
+                    document.getElementById('spinBtn').style.display = 'none';
+                    document.getElementById('extraBtn').style.display = 'block';
+                    document.getElementById('extraBtn').innerText = `🎁 Доп. попытка (${extraSpins})`;
+                } else {
+                    document.getElementById('spinBtn').disabled = true;
+                    document.getElementById('spinBtn').innerText = `⏳ Ждать ${hours}ч ${minutes}м`;
+                }
+            } else {
+                document.getElementById('spinBtn').disabled = false;
+                document.getElementById('spinBtn').innerText = "КРУТИТЬ (РАЗ В 24Ч)";
+                document.getElementById('spinBtn').style.display = 'block';
+                document.getElementById('extraBtn').style.display = 'none';
+            }
+        }
+
+        checkTimer();
+        setInterval(checkTimer, 30000);
+
+        function spinWheel() {
+            if (isSpinning) return;
+            isSpinning = true;
+            document.getElementById('spinBtn').disabled = true;
+            document.getElementById('extraBtn').disabled = true;
+
+            // Распределение призов: 10 (40%), 20 (30%), 50 (20%), 100 (10%)
+            const rand = Math.random();
+            let prizeDeg, prizeAmount;
+
+            if (rand < 0.4) { prizeDeg = 45; prizeAmount = 10; }
+            else if (rand < 0.7) { prizeDeg = 135; prizeAmount = 20; }
+            else if (rand < 0.9) { prizeDeg = 225; prizeAmount = 50; }
+            else { prizeDeg = 315; prizeAmount = 100; } // Джекпот 100 сом
+
+            const totalRotations = 1800 + (360 - prizeDeg);
+            const wheel = document.getElementById('wheel');
+            wheel.style.transform = `rotate(${totalRotations}deg)`;
+
+            setTimeout(() => {
+                isSpinning = false;
+                document.getElementById('result').innerText = `🎉 Приз: +${prizeAmount} сом к бонусу!`;
+                
+                // Обновляем баланс бонусов
+                currentBonus += prizeAmount;
+                localStorage.setItem(`bonus_${userId}`, currentBonus);
+                document.getElementById('bonusBalance').innerText = currentBonus + ' сом';
+
+                // Обновляем таймер 24 часа
+                lastSpinTime = new Date().getTime();
+                localStorage.setItem(`last_spin_${userId}`, lastSpinTime);
+
+                // Отправляем данные боту
+                tg.sendData(JSON.stringify({
+                    action: "roulette_win",
+                    amount: prizeAmount
+                }));
+
+                checkTimer();
+            }, 4000);
+        }
+
+        function useExtraSpin() {
+            if (extraSpins > 0) {
+                extraSpins--;
+                localStorage.setItem(`extra_spins_${userId}`, extraSpins);
+                spinWheel();
+            }
+        }
+    </script>
+</body>
+      </html>
